@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  //output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//* DATA PROVIDERS
+
+model country {
+  id              Int      @id @default(autoincrement())
+  data            String
+  long_data       String?
+  prefix          String?
+  created_at      DateTime? @default(now())
+  updated_at      DateTime?
+
+  //?  RELATIONS
+
+  users           user[]
+}
+
+model restaurant_type {
+  id              Int      @id @default(autoincrement())
+  data            String
+  created_at      DateTime? @default(now())
+  updated_at      DateTime?
+
+  //?  RELATIONS
+
+  restaurants     restaurant[]
+}
+
+model user {
+  id                  String   @id @default(uuid())
+  name                String
+  second_name         String?
+  last_name           String?
+  second_last_name    String?
+  country_id          Int
+  created_at          DateTime? @default(now())
+  updated_at          DateTime?
+
+  //?  RELATIONS
+
+  country             country?  @relation(fields: [country_id], references: [id])
+  auth                user_auth?
+  restaurants         restaurant[] @relation("UserRestaurants")
+}
+
+model user_auth {
+  id             String   @id @default(uuid())
+  user_id        String   @unique
+  email          String   @unique
+  password_hash  String
+  is_locked      Boolean  @default(false)
+  failed_attempts Int     @default(0)
+  created_at     DateTime @default(now())
+
+  //?  RELATIONS
+
+  user           user     @relation(fields: [user_id], references: [id])
+}
+
+model restaurant {
+  id         String   @id @default(uuid())
+  user_id    String
+  name       String
+  type_id    Int?
+  created_at DateTime? @default(now())
+  updated_at DateTime?
+
+  //?  RELATIONS
+  
+  user      user     @relation("UserRestaurants", fields: [user_id], references: [id])
+  type       restaurant_type? @relation(fields: [type_id], references: [id])
+  locations  location[]
+  categories menu_category[]
+}
+
+model location {
+  id           String   @id @default(uuid())
+  restaurant_id String
+  name         String
+  address      String
+  created_at   DateTime? @default(now())
+  updated_at   DateTime?
+
+  //?  RELATIONS
+
+  restaurant   restaurant @relation(fields: [restaurant_id], references: [id])
+}
+
+model menu_category {
+  id            String   @id @default(uuid())
+  restaurant_id String
+  name          String
+  description   String?
+  is_active     Boolean   @default(true)
+  created_at    DateTime? @default(now())
+  updated_at    DateTime?
+  
+  //?  RELATIONS
+
+  restaurant    restaurant @relation(fields: [restaurant_id], references: [id])
+  items         menu_item[]
+}
+
+model menu_item {
+  id          String   @id @default(uuid())
+  category_id String
+  name        String
+  description String?
+  created_at  DateTime? @default(now())
+  updated_at  DateTime?
+
+  //?  RELATIONS
+
+  category    menu_category @relation(fields: [category_id], references: [id])
+}
